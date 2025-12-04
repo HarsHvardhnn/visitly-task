@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- 
+        Default Admin User Credentials:
+        Email: admin@rbac.com
+        Password: harsh123
+        
+        Note: The password is BCrypt encoded with strength 10
+        Raw password: harsh123
+        BCrypt hash: $2a$10$eGmCJKzJnKiLKfg50k/oTObfErt1ZuIvoh9fAcSZIStbmcESkJodO
+    -->
+
+    <changeSet id="005-insert-default-admin-user" author="harsh.vardhan">
+        <!-- Insert default admin user -->
+        <insert tableName="users">
+            <column name="name" value="System Administrator"/>
+            <column name="username" value="admin"/>
+            <column name="email" value="admin@rbac.com"/>
+            <column name="password" value="$2a$10$eGmCJKzJnKiLKfg50k/oTObfErt1ZuIvoh9fAcSZIStbmcESkJodO"/>
+            <column name="created_by" value="system"/>
+            <column name="created_at" valueComputed="NOW()"/>
+        </insert>
+
+        <!-- Assign ADMIN role to the default admin user -->
+        <insert tableName="user_roles">
+            <column name="user_id" valueComputed="(SELECT id FROM users WHERE email = 'admin@rbac.com')"/>
+            <column name="role_id" valueComputed="(SELECT id FROM roles WHERE name = 'ADMIN')"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>

@@ -1,0 +1,99 @@
+package com.assignments.rbac.service;
+
+import com.assignments.rbac.dto.CurrentUserResponse;
+import com.assignments.rbac.dto.LoginRequest;
+import com.assignments.rbac.dto.LoginResponse;
+import com.assignments.rbac.dto.UserRegistrationRequest;
+import com.assignments.rbac.dto.UserResponse;
+import com.assignments.rbac.entity.User;
+import com.assignments.rbac.exception.UserAlreadyExistsException;
+import com.assignments.rbac.exception.UserNotFoundException;
+import com.assignments.rbac.mapper.UserMapper;
+import com.assignments.rbac.repository.UserRepository;
+import com.assignments.rbac.security.JwtUtils;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+@Transactional
+public class UserService {
+
+    private final UserRepository userRepository;
+    private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
+    private final JwtUtils jwtUtils;
+
+    public UserResponse registerUser(UserRegistrationRequest request) {
+        log.info("Attempting to register user with email: {}", request.getEmail());
+        
+        if (userRepository.existsByUsername(request.getUsername())) {
+            log.warn("Registration failed - username already exists: {}", request.getUsername());
+            throw new UserAlreadyExistsException("Username '" + request.getUsername() + "' is already taken");
+        }
+
+        if (userRepository.existsByEmail(request.getEmail())) {
+            log.warn("Registration failed - email already exists: {}", request.getEmail());
+            throw new UserAlreadyExistsException("Email '" + request.getEmail() + "' is already in use");
+        }
+
+        User user = userMapper.toEntity(request);
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+
+        User savedUser = userRepository.save(user);
+        log.info("User registered successfully with ID: {} and email: {}", savedUser.getId(), savedUser.getEmail());
+        return userMapper.toResponse(savedUser);
+    }
+
+    @Transactional(readOnly = true)
+    public LoginResponse loginUser(LoginRequest request) {
+        log.info("Login attempt for email: {}", request.getEmail());
+        
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+            );
+
+            log.debug("Authentication successful for email: {}", request.getEmail());
+
+            String jwt = jwtUtils.generateJwtToken(authentication);
+
+            User user = userRepository.findByEmail(request.getEmail())
+                    .orElseThrow(() -> new UserNotFoundException("User not found with email: " + request.getEmail()));
+
+            UserResponse userResponse = userMapper.toResponse(user);
+
+            log.info("Login successful for user ID: {} with email: {}", user.getId(), user.getEmail());
+            return new LoginResponse(jwt, userResponse);
+            
+        } catch (AuthenticationException e) {
+            log.warn("Login failed for email: {} - Invalid credentials", request.getEmail());
+            throw new BadCredentialsException("Invalid email or password: " + request.getEmail());
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public CurrentUserResponse getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+        
+        log.info("Getting current user details for email: {}", email);
+
+        User user = userRepository.findByEmailWithRoles(email)
+                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+
+        log.info("Current user found with ID: {} and roles: {}", user.toString(),user.getRoles().toString());
+        return userMapper.toCurrentUserResponse(user);
+    }
+}
