@@ -5,6 +5,8 @@ import com.assignments.rbac.dto.LoginRequest;
 import com.assignments.rbac.dto.LoginResponse;
 import com.assignments.rbac.dto.UserRegistrationRequest;
 import com.assignments.rbac.dto.UserResponse;
+import com.assignments.rbac.dto.events.UserLoginEvent;
+import com.assignments.rbac.dto.events.UserRegistrationEvent;
 import com.assignments.rbac.entity.User;
 import com.assignments.rbac.exception.UserAlreadyExistsException;
 import com.assignments.rbac.exception.UserNotFoundException;
@@ -27,6 +29,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.CacheEvict;
 
 import java.time.LocalDateTime;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -40,6 +43,8 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
+    private final EventPublisherService eventPublisherService;
+    private final RequestInfoService requestInfoService;
 
     public UserResponse registerUser(UserRegistrationRequest request) {
         log.info("Attempting to register user with email: {}", request.getEmail());
@@ -59,6 +64,9 @@ public class UserService {
 
         User savedUser = userRepository.save(user);
         log.info("User registered successfully with ID: {} and email: {}", savedUser.getId(), savedUser.getEmail());
+        
+        publishRegistrationEvent(savedUser);
+        
         return userMapper.toResponse(savedUser);
     }
 
@@ -88,10 +96,16 @@ public class UserService {
             UserResponse userResponse = userMapper.toResponse(user);
 
             log.info("Login successful for user ID: {} with email: {}", user.getId(), user.getEmail());
+            
+            publishLoginEvent(user, loginTime, true, null);
+            
             return new LoginResponse(jwt, userResponse);
             
         } catch (AuthenticationException e) {
             log.warn("Login failed for email: {} - Invalid credentials", request.getEmail());
+            
+            publishFailedLoginEvent(request.getEmail(), "Invalid credentials");
+            
             throw new BadCredentialsException("Invalid email or password: " + request.getEmail());
         }
     }
@@ -128,5 +142,67 @@ public class UserService {
     @CacheEvict(value = "userCache", allEntries = true)
     public void evictAllUserCache() {
         log.debug("Cleared all user cache entries");
+    }
+
+    private void publishRegistrationEvent(User user) {
+        try {
+            UserRegistrationEvent event = new UserRegistrationEvent(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getName(),
+                user.getCreatedAt(),
+                requestInfoService.getClientIpAddress(),
+                requestInfoService.getUserAgent()
+            );
+            
+            eventPublisherService.publishUserRegistrationEvent(event);
+        } catch (Exception e) {
+            log.error("Failed to publish registration event for user: {} - Error: {}", user.getEmail(), e.getMessage());
+        }
+    }
+
+    private void publishLoginEvent(User user, LocalDateTime loginTime, boolean successful, String failureReason) {
+        try {
+            user.setRoles(new java.util.HashSet<>(roleRepository.findRolesByUserId(user.getId())));
+            
+            UserLoginEvent event = new UserLoginEvent(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getName(),
+                user.getRoles().stream().map(role -> role.getName()).collect(Collectors.toList()),
+                loginTime,
+                requestInfoService.getClientIpAddress(),
+                requestInfoService.getUserAgent(),
+                successful,
+                failureReason
+            );
+            
+            eventPublisherService.publishUserLoginEvent(event);
+        } catch (Exception e) {
+            log.error("Failed to publish login event for user: {} - Error: {}", user.getEmail(), e.getMessage());
+        }
+    }
+
+    private void publishFailedLoginEvent(String email, String failureReason) {
+        try {
+            UserLoginEvent event = new UserLoginEvent(
+                null, 
+                null, 
+                email,
+                null, 
+                null, 
+                LocalDateTime.now(),
+                requestInfoService.getClientIpAddress(),
+                requestInfoService.getUserAgent(),
+                false,
+                failureReason
+            );
+            
+            eventPublisherService.publishUserLoginEvent(event);
+        } catch (Exception e) {
+            log.error("Failed to publish failed login event for email: {} - Error: {}", email, e.getMessage());
+        }
     }
 }
