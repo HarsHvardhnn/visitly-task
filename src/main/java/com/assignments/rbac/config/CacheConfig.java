@@ -49,7 +49,7 @@ public class CacheConfig {
                 cacheMap.clear();
             }
 
-            private class CacheEntry {
+             class CacheEntry {
                 private final Object value;
                 private final long expirationTime;
 
