@@ -23,6 +23,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 
 import java.time.LocalDateTime;
 
@@ -61,6 +63,7 @@ public class UserService {
     }
 
     @Transactional
+    @CacheEvict(value = "userCache", key = "#request.email")
     public LoginResponse loginUser(LoginRequest request) {
         log.info("Login attempt for email: {}", request.getEmail());
         
@@ -80,7 +83,7 @@ public class UserService {
             LocalDateTime loginTime = java.time.LocalDateTime.now();
             user.setLastLoginAt(loginTime);
             userRepository.save(user);
-            log.debug("Updated last login timestamp for user {}: {}", user.getEmail(), loginTime);
+            log.debug("Updated last login timestamp for user {}: {} (cache evicted)", user.getEmail(), loginTime);
 
             UserResponse userResponse = userMapper.toResponse(user);
 
@@ -94,11 +97,12 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "userCache", key = "#root.target.getCurrentUserEmail()")
     public CurrentUserResponse getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
         
-        log.info("Getting current user details for email: {}", email);
+        log.info("Getting current user details for email: {} (cache miss)", email);
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
@@ -107,5 +111,22 @@ public class UserService {
         
         log.info("Current user found with ID: {} and roles: {}", user.getId(), user.getRoles().size());
         return userMapper.toCurrentUserResponse(user);
+    }
+
+    
+    public String getCurrentUserEmail() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication.getName();
+    }
+
+    
+    @CacheEvict(value = "userCache", key = "#email")
+    public void evictUserCache(String email) {
+        log.debug("Manually evicted cache for user: {}", email);
+    }
+
+    @CacheEvict(value = "userCache", allEntries = true)
+    public void evictAllUserCache() {
+        log.debug("Cleared all user cache entries");
     }
 }
