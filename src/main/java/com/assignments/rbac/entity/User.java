@@ -54,4 +54,7 @@ public class User extends BaseAuditEntity {
                joinColumns = @JoinColumn(name = "user_id"),
                inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles = new HashSet<>();
+
+    @Column(name = "last_login_at")
+    private java.time.LocalDateTime lastLoginAt;
 }

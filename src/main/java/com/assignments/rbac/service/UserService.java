@@ -24,6 +24,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -58,7 +60,7 @@ public class UserService {
         return userMapper.toResponse(savedUser);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public LoginResponse loginUser(LoginRequest request) {
         log.info("Login attempt for email: {}", request.getEmail());
         
@@ -73,6 +75,12 @@ public class UserService {
 
             User user = userRepository.findByEmail(request.getEmail())
                     .orElseThrow(() -> new UserNotFoundException("User not found with email: " + request.getEmail()));
+
+            // Update last login timestamp
+            LocalDateTime loginTime = java.time.LocalDateTime.now();
+            user.setLastLoginAt(loginTime);
+            userRepository.save(user);
+            log.debug("Updated last login timestamp for user {}: {}", user.getEmail(), loginTime);
 
             UserResponse userResponse = userMapper.toResponse(user);
 

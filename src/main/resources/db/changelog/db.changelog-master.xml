@@ -11,5 +11,6 @@
     <include file="db/changelog/004-insert-default-roles.xml"/>
     <include file="db/changelog/005-insert-default-admin-user.xml"/>
     <include file="db/changelog/006-add-is-deleted-column.xml"/>
+    <include file="db/changelog/007-add-last-login-column.xml"/>
     
 </databaseChangeLog>
