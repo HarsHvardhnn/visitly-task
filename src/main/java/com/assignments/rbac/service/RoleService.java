@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -49,7 +50,9 @@ public class RoleService {
             throw new UserNotFoundException("One or more roles not found");
         }
 
-        user.getRoles().addAll(roles);
+        Set<Role> userRoles = new HashSet<>(user.getRoles());
+        userRoles.addAll(roles);
+        user.setRoles(userRoles);
         User savedUser = userRepository.save(user);
         return userMapper.toResponse(savedUser);
     }

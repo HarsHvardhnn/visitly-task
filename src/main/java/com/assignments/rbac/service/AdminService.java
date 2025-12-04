@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -60,7 +61,7 @@ public class AdminService {
     }
 
     private AdminStatsResponse.UserDetailInfo mapUserToDetailInfo(User user) {
-        user.setRoles(new HashSet<>(roleRepository.findRolesByUserId(user.getId())));
+        Set<com.assignments.rbac.entity.Role> userRoles = new HashSet<>(roleRepository.findRolesByUserId(user.getId()));
         
         String loginStatus = determineLoginStatus(user.getLastLoginAt());
         
@@ -69,7 +70,7 @@ public class AdminService {
                 user.getName(),
                 user.getUsername(),
                 user.getEmail(),
-                user.getRoles().stream()
+                userRoles.stream()
                         .map(roleMapper::toResponse)
                         .collect(Collectors.toSet()),
                 user.getLastLoginAt(),

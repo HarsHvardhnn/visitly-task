@@ -3,6 +3,7 @@ package com.assignments.rbac.dto;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Data
 public class UserResponse {
@@ -15,5 +16,6 @@ public class UserResponse {
     private LocalDateTime createdAt;
     private String lastUpdatedBy;
     private LocalDateTime lastUpdatedAt;
+    private Set<RoleResponse> roles;
 }
 
