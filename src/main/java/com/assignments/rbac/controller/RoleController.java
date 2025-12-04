@@ -5,6 +5,8 @@ import com.assignments.rbac.dto.AssignRoleRequest;
 import com.assignments.rbac.dto.RoleRequest;
 import com.assignments.rbac.dto.RoleResponse;
 import com.assignments.rbac.dto.UserResponse;
+
+import java.util.List;
 import com.assignments.rbac.service.RoleService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +28,13 @@ public class RoleController {
         RoleResponse roleResponse = roleService.createRole(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(roleResponse));
+    }
+
+    @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<List<RoleResponse>>> getAllRoles() {
+        List<RoleResponse> roles = roleService.getAllRoles();
+        return ResponseEntity.ok(ApiResponse.success(roles));
     }
 
     @PostMapping("/users/{userId}/roles")

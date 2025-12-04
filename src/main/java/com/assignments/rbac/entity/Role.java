@@ -17,11 +17,11 @@ import java.util.Set;
        uniqueConstraints = {
            @UniqueConstraint(columnNames = "name")
        })
-@Where(clause = "is_deleted = false")
+@Where(clause = "is_deleted = 0")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(callSuper = false)
+@EqualsAndHashCode(callSuper = false, exclude = {"users"})
 public class Role extends BaseAuditEntity {
 
     @Id

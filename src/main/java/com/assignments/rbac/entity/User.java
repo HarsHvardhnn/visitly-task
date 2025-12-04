@@ -19,11 +19,11 @@ import java.util.Set;
            @UniqueConstraint(columnNames = "username"),
            @UniqueConstraint(columnNames = "email")
        })
-@Where(clause = "is_deleted = false")
+@Where(clause = "is_deleted = 0")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(callSuper = false)
+@EqualsAndHashCode(callSuper = false, exclude = {"roles"})
 public class User extends BaseAuditEntity {
     
     @Id

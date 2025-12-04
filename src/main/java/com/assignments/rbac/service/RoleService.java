@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -56,6 +57,14 @@ public class RoleService {
     @Transactional(readOnly = true)
     public Set<Role> findRolesByIds(Set<Long> roleIds) {
         return roleRepository.findByIdIn(roleIds);
+    }
+
+    @Transactional(readOnly = true)
+    public List<RoleResponse> getAllRoles() {
+        List<Role> roles = roleRepository.findAll();
+        return roles.stream()
+                .map(roleMapper::toResponse)
+                .toList();
     }
 }
 

@@ -10,6 +10,7 @@ import com.assignments.rbac.exception.UserAlreadyExistsException;
 import com.assignments.rbac.exception.UserNotFoundException;
 import com.assignments.rbac.mapper.UserMapper;
 import com.assignments.rbac.repository.UserRepository;
+import com.assignments.rbac.repository.RoleRepository;
 import com.assignments.rbac.security.JwtUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
@@ -90,10 +92,12 @@ public class UserService {
         
         log.info("Getting current user details for email: {}", email);
 
-        User user = userRepository.findByEmailWithRoles(email)
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
 
-        log.info("Current user found with ID: {} and roles: {}", user.toString(),user.getRoles().toString());
+        user.setRoles(new java.util.HashSet<>(roleRepository.findRolesByUserId(user.getId())));
+        
+        log.info("Current user found with ID: {} and roles: {}", user.getId(), user.getRoles().size());
         return userMapper.toCurrentUserResponse(user);
     }
 }
