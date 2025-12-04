@@ -1,7 +1,6 @@
 package com.assignments.rbac.service;
 
 import com.assignments.rbac.entity.User;
-import com.assignments.rbac.exception.UserNotFoundException;
 import com.assignments.rbac.repository.UserRepository;
 import com.assignments.rbac.repository.RoleRepository;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +12,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.stream.Collectors;
 
 @Slf4j
