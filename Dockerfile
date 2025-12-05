@@ -38,3 +38,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 CMD ["/wait-for-it.sh", "mysql:3306", "--", "rabbitmq:5672", "--", "java", "-jar", "-Dspring.profiles.active=docker", "target/rbac-0.0.1-SNAPSHOT.jar"]
 
 
+

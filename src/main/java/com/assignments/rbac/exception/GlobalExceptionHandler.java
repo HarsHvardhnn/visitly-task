@@ -70,8 +70,13 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(NoHandlerFoundException.class)
     public ResponseEntity<ApiResponse<Object>> handleNotFound(NoHandlerFoundException ex) {
+        String requestURL = ex.getRequestURL();
+        if (requestURL != null && requestURL.contains("/swagger-config")) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error("Swagger config endpoint not available"));
+        }
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.error("Endpoint not found: " + ex.getRequestURL()));
+                .body(ApiResponse.error("Endpoint not found: " + requestURL));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

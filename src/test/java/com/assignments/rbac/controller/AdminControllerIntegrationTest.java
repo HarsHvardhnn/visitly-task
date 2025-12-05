@@ -260,3 +260,4 @@ class AdminControllerIntegrationTest {
                 .andExpect(jsonPath("$.error").doesNotExist());
     }
 }
+

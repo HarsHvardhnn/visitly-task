@@ -358,3 +358,4 @@ class ComprehensiveSecurityIntegrationTest {
                 .andExpect(status().isOk());
     }
 }
+

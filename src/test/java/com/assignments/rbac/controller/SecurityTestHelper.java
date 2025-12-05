@@ -167,3 +167,4 @@ public class SecurityTestHelper {
         public Role getManagerRole() { return managerRole; }
     }
 }
+

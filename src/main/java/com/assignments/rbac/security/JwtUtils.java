@@ -67,7 +67,11 @@ public class JwtUtils {
                 .parseSignedClaims(token)
                 .getPayload();
         
-        return (List<String>) claims.get("roles");
+        Object rolesObj = claims.get("roles");
+        if (rolesObj == null) {
+            return java.util.Collections.emptyList();
+        }
+        return (List<String>) rolesObj;
     }
 
     public boolean validateJwtToken(String authToken) {
