@@ -250,24 +250,37 @@ class ComprehensiveSecurityIntegrationTest {
     }
 
     /**
-     * Test CSRF protection on state-changing operations
+     * Test that state-changing operations work without CSRF tokens.
+     * CSRF protection is disabled for this REST API as it uses stateless JWT authentication.
+     * This is appropriate for REST APIs where tokens are sent in headers, not cookies.
      */
     @Test
-    void stateChangingOperations_WithoutCSRF_ReturnForbidden() throws Exception {
+    void stateChangingOperations_WithoutCSRF_Succeed() throws Exception {
         String adminToken = testSetup.getAdminToken();
 
-        // POST operations without CSRF should fail
+        // POST operations without CSRF should succeed (CSRF is disabled for REST API)
+        RoleRequest roleRequest = new RoleRequest();
+        roleRequest.setName("TEST_ROLE");
+        roleRequest.setDescription("Test role for CSRF test");
+        
         mockMvc.perform(post("/api/roles")
                 .header("Authorization", "Bearer " + adminToken)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"name\":\"TEST\"}"))
-                .andExpect(status().isForbidden());
+                .content(objectMapper.writeValueAsString(roleRequest)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.success").value(true));
 
-        mockMvc.perform(post("/api/roles/users/1/roles")
+        // Test role assignment without CSRF token
+        Role testRole = roleRepository.findByName("TEST_ROLE").orElseThrow();
+        AssignRoleRequest assignRoleRequest = new AssignRoleRequest();
+        assignRoleRequest.setRoleIds(Set.of(testRole.getId()));
+        
+        mockMvc.perform(post("/api/roles/users/{userId}/roles", testSetup.getRegularUser().getId())
                 .header("Authorization", "Bearer " + adminToken)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"roleIds\":[1]}"))
-                .andExpect(status().isForbidden());
+                .content(objectMapper.writeValueAsString(assignRoleRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
     }
 
     /**
