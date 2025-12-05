@@ -23,7 +23,7 @@ For Docker Setup:
 For Local Maven Setup:
 - Java 17 or higher
 - Maven 3.6+ (or use the included Maven wrapper)
-- MySQL 8.0+ running locally on port 3306
+- MySQL 8.0+ installed and running locally on port 3306 (the database will be created automatically if it doesn't exist)
 - RabbitMQ running locally on port 5672 (optional, but recommended)
 
 Quick Start with Docker
@@ -53,6 +53,39 @@ Once you see logs indicating the application has started, you can verify:
 - RabbitMQ Management: http://localhost:15673 (username: admin, password: admin123)
 - MySQL: Available on localhost:3307 (to avoid conflicts with local MySQL)
 
+Verifying RabbitMQ Events
+
+To verify that RabbitMQ events are being published correctly:
+
+1. Access RabbitMQ Management UI:
+   - Open http://localhost:15673 in your browser
+   - Login with username: admin, password: admin123
+
+2. Check Queues:
+   - Click on the "Queues" tab in the top menu
+   - You should see three queues:
+     * user.events.queue (receives all user events)
+     * user.registration.queue (receives registration events)
+     * user.login.queue (receives login events)
+
+3. Test Event Publishing:
+   - Register a new user via Swagger UI or API (POST /api/users/register)
+   - Login with a user (POST /api/users/login)
+   - Go back to RabbitMQ Management UI and check the queues
+   - You should see message counts increasing in the queues
+   - Click on a queue name to see message details
+
+4. View Messages:
+   - Click on a queue (e.g., user.registration.queue)
+   - Click "Get messages" to see the event payload
+   - The messages will contain JSON data with user registration/login information
+
+5. Check Application Logs:
+   - Look for log messages like "Publishing user registration event" or "Publishing user login event"
+   - These confirm that events are being sent to RabbitMQ
+
+If you see messages accumulating in the queues after registering or logging in users, the event publishing is working correctly.
+
 Step 3: Stop Everything
 
 When you're done, stop all containers:
@@ -67,10 +100,18 @@ If you prefer to run everything locally without Docker, follow these steps:
 
 Step 1: Set Up MySQL
 
-Make sure MySQL is running and create the database:
-CREATE DATABASE rbac_db;
+Prerequisites:
+- MySQL server must be installed and running on your machine
+- MySQL should be accessible on localhost:3307
+- The MySQL user must have CREATE DATABASE privileges
 
-Update the database credentials in src/main/resources/application.properties if needed (default is root/root).
+The application is configured to automatically create the database (rbac_db) if it doesn't exist when you start the application. You don't need to manually create it.
+
+Default database credentials:
+- Username: root
+- Password: root
+
+If your MySQL setup uses different credentials, update them in src/main/resources/application.properties. The database connection string includes createDatabaseIfNotExist=true, so the database will be created automatically on first run.
 
 Step 2: Set Up RabbitMQ (Optional)
 
