@@ -34,7 +34,8 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD curl -f http://localhost:8080/actuator/health || exit 1
 
-CMD /wait-for-it.sh mysql:3306 --timeout=60 --strict -- /wait-for-it.sh rabbitmq:5672 --timeout=60 --strict -- java -jar -Dspring.profiles.active=docker target/rbac-0.0.1-SNAPSHOT.jar
+# Run the application with wait-for-it for dependencies
+CMD ["/wait-for-it.sh", "mysql:3306", "--", "rabbitmq:5672", "--", "java", "-jar", "-Dspring.profiles.active=docker", "target/rbac-0.0.1-SNAPSHOT.jar"]
 
 
 
