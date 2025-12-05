@@ -33,6 +33,8 @@ class UserRepositoryTest {
         testUser.setUsername("harsh");
         testUser.setEmail("harsh@test.com");
         testUser.setPassword("encodedPassword");
+        testUser.setCreatedAt(java.time.LocalDateTime.now());
+        testUser.setIsDeleted(false);
     }
 
     @Test
@@ -125,6 +127,8 @@ class UserRepositoryTest {
         duplicateUser.setUsername("harsh");
         duplicateUser.setEmail("test@example.com");
         duplicateUser.setPassword("encodedPassword");
+        duplicateUser.setCreatedAt(java.time.LocalDateTime.now());
+        duplicateUser.setIsDeleted(false);
 
         assertThrows(Exception.class, () -> {
             userRepository.saveAndFlush(duplicateUser);
@@ -140,6 +144,8 @@ class UserRepositoryTest {
         duplicateUser.setUsername("testuser");
         duplicateUser.setEmail("harsh@test.com");
         duplicateUser.setPassword("encodedPassword");
+        duplicateUser.setCreatedAt(java.time.LocalDateTime.now());
+        duplicateUser.setIsDeleted(false);
 
         assertThrows(Exception.class, () -> {
             userRepository.saveAndFlush(duplicateUser);

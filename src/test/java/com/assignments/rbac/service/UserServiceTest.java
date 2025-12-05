@@ -10,7 +10,10 @@ import com.assignments.rbac.exception.UserAlreadyExistsException;
 import com.assignments.rbac.exception.UserNotFoundException;
 import com.assignments.rbac.mapper.UserMapper;
 import com.assignments.rbac.repository.UserRepository;
+import com.assignments.rbac.repository.RoleRepository;
 import com.assignments.rbac.security.JwtUtils;
+import com.assignments.rbac.service.EventPublisherService;
+import com.assignments.rbac.service.RequestInfoService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,6 +33,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
@@ -38,6 +42,9 @@ class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private RoleRepository roleRepository;
 
     @Mock
     private UserMapper userMapper;
@@ -50,6 +57,12 @@ class UserServiceTest {
 
     @Mock
     private JwtUtils jwtUtils;
+
+    @Mock
+    private EventPublisherService eventPublisherService;
+
+    @Mock
+    private RequestInfoService requestInfoService;
 
     @InjectMocks
     private UserService userService;
@@ -185,7 +198,7 @@ class UserServiceTest {
         BadCredentialsException exception = assertThrows(BadCredentialsException.class,
                 () -> userService.loginUser(loginRequest));
 
-        assertEquals("Invalid email or password", exception.getMessage());
+        assertEquals("Invalid email or password: harsh@test.com", exception.getMessage());
         verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
         verify(userRepository, never()).findByEmail(anyString());
     }
@@ -199,6 +212,7 @@ class UserServiceTest {
             mockedSecurityContextHolder.when(SecurityContextHolder::getContext).thenReturn(securityContext);
 
             when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(user));
+            when(roleRepository.findRolesByUserId(anyLong())).thenReturn(java.util.Collections.emptyList());
             when(userMapper.toCurrentUserResponse(any(User.class))).thenReturn(currentUserResponse);
 
             CurrentUserResponse result = userService.getCurrentUser();

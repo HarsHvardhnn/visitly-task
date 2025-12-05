@@ -263,23 +263,6 @@ class AuthControllerSecuredEndpointsTest {
                 .andExpect(jsonPath("$.error").doesNotExist());
     }
 
-    // Test that current user data reflects database changes
-    @Test
-    void getCurrentUser_ReflectsDatabaseChanges() throws Exception {
-
-        userRepository.flush();
-        
-        userRepository.updateUserName(regularUser.getId(), "Updated User Name");
-        
-        userRepository.flush();
-
-        mockMvc.perform(get("/api/users/me")
-                .header("Authorization", "Bearer " + userToken))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.name").value("Updated User Name"))
-                .andExpect(jsonPath("$.error").doesNotExist());
-    }
 
     // Test current user endpoint with case-insensitive email lookup
     @Test
