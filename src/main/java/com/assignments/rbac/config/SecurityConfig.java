@@ -53,6 +53,8 @@ public class SecurityConfig {
             .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll() 
+                .requestMatchers("/actuator/health", "/actuator/info").permitAll() 
                 .requestMatchers("/api/users/register", "/api/users/login").permitAll()
                 .requestMatchers(
                     "/swagger-ui.html",
