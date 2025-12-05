@@ -77,3 +77,4 @@ volumes:
 networks:
   rbac-network:
     driver: bridge
+
